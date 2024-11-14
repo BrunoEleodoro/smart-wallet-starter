@@ -1,4 +1,5 @@
 'use client';
+import { sdk } from '@/sdk';
 import { useMutation } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import { FaArrowCircleRight, FaUserPlus } from 'react-icons/fa';
@@ -13,7 +14,22 @@ type BoxProps = {
 };
 export const AuthView = () => {
     const deployAccount = async () => {
-        // TODO: Implement the deploy account logic
+        // Prepare unique salt
+        const salt = sdk.deployer.getSalt();
+
+        // Calculate the smart account address
+        const publicAddress = await sdk.deployer.getAddressForSalt(salt);
+
+        // Create passkey
+        const passkey = await sdk.webauthn.register(publicAddress);
+
+        // Extract p256 public key from the passkey
+        const publicKey = sdk.webauthn.getPublicKeyFromAuthenticatorData(
+            passkey.authenticatorData,
+        );
+
+        // Make deployment call: If status == 1, deployment is successful
+        const { status } = await sdk.deployer.deploy(salt, publicKey);
     };
 
     const deployMutation = useMutation({
